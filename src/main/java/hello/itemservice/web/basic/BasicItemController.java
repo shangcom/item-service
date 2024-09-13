@@ -12,30 +12,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
 @Controller
-@RequestMapping("/basic/items")
-@RequiredArgsConstructor // final 붙은 필드로 생성자 자동으로 만들어준다(아래 Autowired 대신함).
+@RequestMapping("/basic/items") // 요청 경로. 절대 경로처럼 작용. 이 클래스의 모든 메서드가 기본으로 사용.
+@RequiredArgsConstructor
 public class BasicItemController {
 
     private final ItemRepository itemRepository;
-
-//    @Autowired
-//    public BasicItemController(ItemRepository itemRepository) {
-//        this.itemRepository = itemRepository;
-//    }
 
     @GetMapping
     public String items(Model model) {
         List<Item> items = itemRepository.findAll();
         model.addAttribute("items", items);
-        return "basic/items";
+        return "basic/items"; // 뷰 경로. 상대 경로로 해석. 뷰 리졸버가 이 경로를 기준으로 실제 뷰 파일을 찾음.
     }
 
-    /**
-     * 테스트용 데이터 추가
-     */
     @PostConstruct
     public void init() {
-        itemRepository.save(new Item("itemA", 1000, 10));
-        itemRepository.save(new Item("itemB", 2000, 20));
+        itemRepository.save(new Item("testA", 10000, 10));
+        itemRepository.save(new Item("testB", 20000, 20));
     }
 }
