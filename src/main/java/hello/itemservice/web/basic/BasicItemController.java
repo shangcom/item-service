@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -101,11 +102,54 @@ public class BasicItemController {
      * 만약 메서드 파라미터에 객체 타입이 명시되어 있으면, 이를 생략해도 @ModelAttribute와 동일한 동작을 함.
      * 단순 데이터 타입은 @RequestParam으로 처리됨.
      */
-    @PostMapping("/add")
+//    @PostMapping("/add")
     public String addItemV6(Item item) {
         itemRepository.save(item);
         return "basic/item";
     }
+
+    /**
+     * redirect 사용해 중복 등록 방지.
+     * Post-Redirect-Get 패턴.
+     * 새로고침 = 마지막으로 서버에 전송한 데이터를 다시 전송한다.
+     * redirect가 없는 경우, 마지막 요청이 'post/add + 상품 데이터'
+     * 새로고침 하면 post 요청 다시('post/add + 상품 데이터')하고, 같은 자료가 계속 등록됨.
+     * 반면 redirect를 적용하면, post 요청 뒤 새로운 get 요청이 자동으로 실행됨.
+     * 그럼 새로고침을 하면 마지막 요청인 get 요청을 하게됨.
+     * 결과적으로 반복 등록 방지함.
+     */
+//    @PostMapping("/add")
+    public String addItemV7(Item item) {
+        Item savedItem = itemRepository.save(item);
+        return "redirect:/basic/items/" + item.getId();
+    }
+
+    /**
+     * 위의 메서더는 return에 + item.getId()를 사용했음.
+     * 이렇게 하면 URL 인코딩이 안됨.
+     * @param redirectAttributes 사용하면 된다.
+     */
+    @PostMapping("/add")
+    public String addItemV8(Item item, RedirectAttributes redirectAttributes) {
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/basic/items/{itemId}";
+    }
+
+    @GetMapping("/{itemId}/edit")
+    public String editForm(@PathVariable Long itemId, Model model) {
+        Item item = itemRepository.findById(itemId);
+        model.addAttribute("item", item);
+        return "basic/editForm";
+    }
+
+    @PostMapping("/{itemId}/edit")
+    public String editV1(@PathVariable Long itemId, @ModelAttribute Item item) {
+        itemRepository.update(itemId, item);
+        return "redirect:/basic/items/{itemId}";
+    }
+
 
     @PostConstruct
     public void init() {
